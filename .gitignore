@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Node / Vite
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Local configuration and editor files
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
