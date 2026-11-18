@@ -57,8 +57,20 @@ La tabla de símbolos usa un repositorio en memoria inicializado con cuatro
 dispositivos por defecto. Si se inyecta un repositorio, utiliza sus datos
 existentes sin agregar dispositivos automáticamente.
 
+Los identificadores de dispositivos se comparan exactamente, sin normalización
+y distinguiendo mayúsculas de minúsculas: `led1` y `LED1` son dispositivos
+distintos. Esta regla se aplica al registro, la búsqueda y la actualización,
+y debe mantenerse en cualquier implementación futura del repositorio.
+
 El comando `docker compose up --build` se habilitará cuando se implementen
 los servicios y sus archivos de configuración; todavía no está disponible.
+
+## Regla de integración del análisis
+
+El parser debe procesar los tokens disponibles incluso si el lexer informó
+errores, para presentar ambos tipos de diagnóstico. El futuro servicio de
+aplicación no debe pasar al análisis semántico ni ejecutar instrucciones si
+hay errores léxicos o sintácticos.
 
 ## Flujo de Git sugerido
 

@@ -72,7 +72,11 @@ class Simbolo:
 
 
 class DispositivoRepository(ABC):
-    """Contrato de almacenamiento de dispositivos, sustituible por PostgreSQL."""
+    """Almacena dispositivos con identificadores de comparación exacta.
+
+    Los identificadores distinguen mayúsculas de minúsculas y no se normalizan;
+    por ejemplo, ``led1`` y ``LED1`` son distintos en todas las operaciones.
+    """
 
     @abstractmethod
     def registrar(self, simbolo: Simbolo) -> None:

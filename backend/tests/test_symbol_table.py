@@ -49,12 +49,34 @@ def test_repositorio_inyectado_y_registro() -> None:
 def test_actualizacion_valida_e_invalida() -> None:
     """Una actualización inválida no altera el estado anterior."""
     tabla = TablaSimbolos()
+    anterior = tabla.obtener("led1")
     tabla.actualizar_estado("led1", "ENCENDIDO")
-    assert tabla.obtener("led1").estado == "ENCENDIDO"
+    actualizado = tabla.obtener("led1")
+    assert actualizado is not anterior
+    assert anterior.estado == "APAGADO"
+    assert actualizado.estado == "ENCENDIDO"
     with pytest.raises(ErrorTablaSimbolos) as error:
         tabla.actualizar_estado("led1", "ACTIVADA")
     assert error.value.codigo == "ESTADO_INCOMPATIBLE"
     assert tabla.obtener("led1").estado == "ENCENDIDO"
+
+
+def test_identificadores_distinguen_mayusculas() -> None:
+    """Registro, búsqueda y actualización usan identificadores exactos."""
+    tabla = TablaSimbolos()
+    assert not tabla.existe("LED1")
+    with pytest.raises(ErrorTablaSimbolos) as error:
+        tabla.obtener("LED1")
+    assert error.value.codigo == "DISPOSITIVO_NO_EXISTE"
+    tabla.registrar(Simbolo("LED1", "LED", "APAGADO"))
+    assert tabla.existe("led1")
+    assert tabla.existe("LED1")
+    tabla.actualizar_estado("LED1", "ENCENDIDO")
+    assert tabla.obtener("LED1").estado == "ENCENDIDO"
+    assert tabla.obtener("led1").estado == "APAGADO"
+    with pytest.raises(ErrorTablaSimbolos) as error:
+        tabla.registrar(Simbolo("LED1", "LED", "ENCENDIDO"))
+    assert error.value.codigo == "DISPOSITIVO_DUPLICADO"
 
 
 def test_dispositivo_ausente() -> None:
