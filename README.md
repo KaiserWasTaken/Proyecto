@@ -6,9 +6,12 @@ ni lenguaje natural.
 
 ## Estado
 
-Está implementada la tabla de símbolos con un repositorio en memoria. El
-lexer, parser, AST, analizador semántico, API, interfaz, base de datos y
-Docker Compose aún no están implementados en este directorio.
+Están implementados el lexer, el parser, el AST, su integración y la tabla de
+símbolos con un repositorio en memoria. El analizador semántico, el CLI, la
+API, la interfaz, la base de datos y Docker Compose aún están pendientes.
+
+Consulta la [gramática y los tokens](docs/gramatica.md) y los
+[nodos del AST y Visitor](docs/ast.md).
 
 ## Estructura prevista
 
@@ -41,7 +44,8 @@ base de datos; la API y la persistencia serán adaptadores externos.
 
 ## Preparación del backend
 
-Se requiere Python 3.12. Desde PowerShell, en la raíz del proyecto:
+Se requiere Python 3.12 o posterior (`requires-python = ">=3.12"`). Desde
+PowerShell, en la raíz del proyecto:
 
 ```powershell
 py -3.12 -m venv .venv
@@ -51,7 +55,7 @@ python -m pytest -c .\backend\pyproject.toml
 ```
 
 Si el lanzador `py` no está disponible, utiliza la ruta al ejecutable de
-Python 3.12 para crear el entorno virtual.
+Python 3.12 o posterior para crear el entorno virtual.
 
 La tabla de símbolos usa un repositorio en memoria inicializado con cuatro
 dispositivos por defecto. Si se inyecta un repositorio, utiliza sus datos
