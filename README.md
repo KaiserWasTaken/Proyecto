@@ -7,12 +7,12 @@ ni lenguaje natural.
 ## Estado
 
 Están implementados el lexer, el parser, el AST, el analizador semántico, la
-tabla de símbolos en memoria y la API de validación. El CLI, la interfaz, la
-base de datos y Docker Compose aún están pendientes. La API valida comandos,
-pero no los ejecuta.
+tabla de símbolos en memoria, la API y la interfaz de validación. El CLI, la
+base de datos y Docker Compose aún están pendientes. La aplicación valida
+comandos, pero no los ejecuta.
 
-Consulta la [gramática y los tokens](docs/gramatica.md) y los
-[nodos del AST y Visitor](docs/ast.md).
+Consulta la [gramática y los tokens](docs/gramatica.md), los
+[nodos del AST y Visitor](docs/ast.md) y la [semántica](docs/semantica.md).
 
 ## Estructura prevista
 
@@ -67,8 +67,26 @@ uvicorn app.main:app --reload
 
 El origen permitido por CORS se configura mediante la variable de entorno
 `FRONTEND_ORIGIN` (por defecto `http://localhost:5173`); consulta
-`backend/.env.example`. La variable debe establecerse en el entorno antes de
+[backend/.env.example](backend/.env.example). La variable debe establecerse en el entorno antes de
 arrancar el servidor.
+
+## Preparación del frontend
+
+Con el backend en marcha, abre otra terminal en la raíz y ejecuta:
+
+```powershell
+cd .\frontend
+npm install
+npm run dev
+```
+
+Abre `http://localhost:5173`. La dirección de la API se configura con
+`VITE_API_URL`; por defecto es `http://localhost:8000`. Puedes copiar
+[frontend/.env.example](frontend/.env.example) a `frontend/.env` para
+personalizarla y reiniciar Vite. El botón «Ejecutar» solo valida: los
+dispositivos no cambian de estado.
+
+Para comprobar la compilación: `npm run build` desde `frontend`.
 
 La tabla de símbolos usa un repositorio en memoria inicializado con cuatro
 dispositivos por defecto. Si se inyecta un repositorio, utiliza sus datos
