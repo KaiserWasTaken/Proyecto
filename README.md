@@ -7,12 +7,15 @@ ni lenguaje natural.
 ## Estado
 
 Están implementados el lexer, el parser, el AST, el analizador semántico, la
-tabla de símbolos en memoria, la API y la interfaz de validación. El CLI, la
-base de datos y Docker Compose aún están pendientes. La aplicación valida
-comandos, pero no los ejecuta.
+tabla de símbolos en memoria, el IR, el optimizador y el ejecutor con puertos
+inyectables. La API y la interfaz siguen siendo solo de validación; aún no
+están conectadas al ejecutor. El CLI, la base de datos, SMTP real y Docker
+Compose están pendientes.
 
 Consulta la [gramática y los tokens](docs/gramatica.md), los
-[nodos del AST y Visitor](docs/ast.md) y la [semántica](docs/semantica.md).
+[nodos del AST y Visitor](docs/ast.md), la [semántica](docs/semantica.md),
+el [IR](docs/ir.md), la [optimización](docs/optimizacion.md) y el
+[ejecutor](docs/ejecutor.md).
 
 ## Estructura prevista
 
@@ -54,6 +57,9 @@ py -3.12 -m venv .venv
 python -m pip install -e ".\backend[dev]"
 python -m pytest -c .\backend\pyproject.toml
 ```
+
+FastAPI y Starlette tienen versiones fijadas en `backend/pyproject.toml`;
+HTTPX también está fijado en las dependencias de desarrollo para las pruebas.
 
 Si el lanzador `py` no está disponible, utiliza la ruta al ejecutable de
 Python 3.12 o posterior para crear el entorno virtual.

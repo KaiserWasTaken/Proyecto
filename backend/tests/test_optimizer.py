@@ -1,10 +1,14 @@
 """Pruebas de optimización y conservación del flujo del IR."""
 
+import random
+
 import pytest
 
 from app.ir.generator import generar_ir
 from app.ir.instructions import InstruccionIR, OpIR
 from app.optimizer.optimizer import optimizar
+from app.vm.executor import Ejecutor
+from conftest import CorreoFalso, NotificacionesFalsas, compilar, repositorio_inicial
 
 
 def control(dispositivo: str, operacion: str) -> dict[str, object]:
@@ -190,6 +194,81 @@ def test_destino_invalido_no_se_oculta(destino: int | str) -> None:
         optimizar(ir)
 
 
-@pytest.mark.skip(reason="pendiente del ejecutor (Paso 3)")
-def test_equivalencia_con_y_sin_optimizacion() -> None:
-    """Comparará el estado final y los efectos observables con el ejecutor."""
+def comprobar_equivalencia(fuente: str) -> None:
+    """Compara efectos visibles y estados al ejecutar una fuente con y sin optimización."""
+    repositorios = [repositorio_inicial(), repositorio_inicial()]
+    ir = compilar(fuente, repositorios[0])
+    variantes = [ir, optimizar(ir).ir_optimizado]
+    resultados = []
+    for repositorio, instrucciones in zip(repositorios, variantes, strict=True):
+        correo, notificaciones = CorreoFalso(), NotificacionesFalsas()
+        resultado = Ejecutor(repositorio, correo, notificaciones).ejecutar(instrucciones)
+        assert resultado.exito, f"Error al ejecutar:\n{fuente}\n{resultado.errores}"
+        resultados.append((
+            repositorio.listar(),
+            [evento for evento in resultado.eventos if evento.tipo != OpIR.SET_STATE.value],
+            correo.enviados,
+            notificaciones.mensajes,
+        ))
+    assert resultados[0] == resultados[1], f"Diferencia para el programa:\n{fuente}"
+
+
+@pytest.mark.parametrize(
+    "fuente",
+    [
+        "ENCENDER led1\nENCENDER led1",
+        "ENCENDER led1\nAPAGAR led1",
+        "ENCENDER led1\nCONSULTAR led1\nAPAGAR led1",
+        'ENCENDER led1\nNOTIFICAR "x"\nAPAGAR led1',
+        "ENCENDER led1\nENCENDER led2\nAPAGAR led1",
+        "ENCENDER led1\nSI led2 == ENCENDIDO ENTONCES APAGAR led1",
+        'ENVIAR CORREO A "a@b.com" MENSAJE "x"\nENVIAR CORREO A "a@b.com" MENSAJE "x"',
+        'ENCENDER led1\nAPAGAR led1\nSI led2 == ENCENDIDO ENTONCES ENCENDER led1\nNOTIFICAR "después"',
+        'ENCENDER led1\nLISTAR DISPOSITIVOS\nAPAGAR led1',
+        'ENCENDER led1\nENVIAR CORREO A "a@b.com" MENSAJE "x"\nAPAGAR led1',
+    ],
+)
+def test_equivalencia_casos_del_optimizador(fuente: str) -> None:
+    """Los ejemplos del optimizador conservan estados y salidas observables."""
+    comprobar_equivalencia(fuente)
+
+
+def programas_aleatorios() -> list[str]:
+    """Genera 200 programas válidos de entre una y doce líneas con semilla fija."""
+    aleatorio = random.Random(42)
+    controles = [
+        f"{accion} {dispositivo}"
+        for dispositivo in ("led1", "led2", "ventilador1")
+        for accion in ("ENCENDER", "APAGAR")
+    ] + ["ACTIVAR alarma1", "DESACTIVAR alarma1"]
+    consultas = [f"CONSULTAR {dispositivo}" for dispositivo in (
+        "led1", "led2", "alarma1", "ventilador1"
+    )]
+    simples = controles + consultas + [
+        'NOTIFICAR "Prueba"',
+        'ENVIAR CORREO A "a@b.com" MENSAJE "Hola"',
+        "LISTAR DISPOSITIVOS",
+    ]
+    condiciones = [
+        (dispositivo, estado)
+        for dispositivo in ("led1", "led2", "ventilador1")
+        for estado in ("ENCENDIDO", "APAGADO")
+    ] + [("alarma1", "ACTIVADA"), ("alarma1", "DESACTIVADA")]
+    programas = []
+    for _ in range(200):
+        lineas = []
+        for _ in range(aleatorio.randint(1, 12)):
+            if aleatorio.randrange(4) == 0:
+                dispositivo, estado = aleatorio.choice(condiciones)
+                accion = aleatorio.choice(simples)
+                lineas.append(f"SI {dispositivo} == {estado} ENTONCES {accion}")
+            else:
+                lineas.append(aleatorio.choice(simples))
+        programas.append("\n".join(lineas))
+    return programas
+
+
+@pytest.mark.parametrize("fuente", programas_aleatorios(), ids=lambda fuente: fuente.replace("\n", " | "))
+def test_equivalencia_programas_aleatorios(fuente: str) -> None:
+    """Compara la ejecución de cada programa generado con y sin optimización."""
+    comprobar_equivalencia(fuente)

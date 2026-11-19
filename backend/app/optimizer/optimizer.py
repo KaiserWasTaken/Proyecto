@@ -1,8 +1,8 @@
 """Optimizaciones de asignaciones dentro de bloques básicos.
 
 Se preservan el estado final de los dispositivos y las salidas de GET_STATE,
-LIST_DEVICES, NOTIFY y SEND_EMAIL, en el mismo orden. Los estados intermedios
-de SET_STATE no son observables: no se registra un evento por cada asignación.
+LIST_DEVICES, NOTIFY y SEND_EMAIL, en el mismo orden. La VM registra eventos
+de SET_STATE, pero estos estados intermedios no forman parte de la equivalencia.
 """
 
 from dataclasses import dataclass
