@@ -30,3 +30,17 @@ export interface ResultadoValidacion {
   errores: ErrorAnalisis[]
   instrucciones: Instruccion[]
 }
+
+export interface EventoEjecucion {
+  tipo: string
+  texto: string
+  dispositivo?: string
+  estado?: string
+}
+
+export interface ResultadoEjecucion {
+  valido: boolean
+  exito: boolean
+  errores: ErrorAnalisis[]
+  eventos: EventoEjecucion[]
+}

@@ -30,7 +30,8 @@ function App() {
       <header className="app-header">
         <p className="eyebrow">LENGUAJES Y AUTÓMATAS II</p>
         <h1>CommandFlow</h1>
-        <p>Valida instrucciones para dispositivos simulados.</p>
+        <p>Ejecuta instrucciones para dispositivos simulados.</p>
+        <a href="http://localhost:8025" target="_blank" rel="noopener noreferrer">Abrir Mailpit</a>
       </header>
       <div className="workspace">
         <Console refrescarDispositivos={refrescarDispositivos} />

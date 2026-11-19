@@ -8,9 +8,9 @@ ni lenguaje natural.
 
 Están implementados el lexer, el parser, el AST, el analizador semántico, la
 tabla de símbolos en memoria, el IR, el optimizador y el ejecutor con puertos
-inyectables. La API valida y ejecuta comandos con PostgreSQL y SMTP. La
-interfaz todavía solo valida; el CLI y el Compose completo están pendientes.
-Compose incluye PostgreSQL y Mailpit como servicios de apoyo.
+inyectables. La API y la interfaz ejecutan comandos con PostgreSQL y SMTP.
+El CLI y el Compose completo están pendientes. Compose incluye PostgreSQL y
+Mailpit como servicios de apoyo.
 
 Consulta la [gramática y los tokens](docs/gramatica.md), los
 [nodos del AST y Visitor](docs/ast.md), la [semántica](docs/semantica.md),
@@ -83,7 +83,7 @@ Get-Content .\.env | Where-Object { $_ -match '^\s*[A-Za-z_][A-Za-z0-9_]*=' } | 
     Set-Item -Path "Env:$nombre" -Value $valor
 }
 cd .\backend
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --port 8001
 ```
 
 El origen permitido por CORS se configura mediante la variable de entorno
@@ -102,16 +102,15 @@ npm run dev
 ```
 
 Abre `http://localhost:5173`. La dirección de la API se configura con
-`VITE_API_URL`; por defecto es `http://localhost:8000`. Puedes copiar
+`VITE_API_URL`; por defecto es `http://localhost:8001`. Puedes copiar
 [frontend/.env.example](frontend/.env.example) a `frontend/.env` para
-personalizarla y reiniciar Vite. El botón «Ejecutar» solo valida: los
-dispositivos no cambian de estado.
+personalizarla y reiniciar Vite. El botón «Ejecutar» valida y ejecuta el
+programa; el panel se actualiza con el estado almacenado.
 
 Para comprobar la compilación: `npm run build` desde `frontend`.
 
-La tabla de símbolos usa un repositorio en memoria inicializado con cuatro
-dispositivos por defecto. Si se inyecta un repositorio, utiliza sus datos
-existentes sin agregar dispositivos automáticamente.
+La API utiliza un repositorio PostgreSQL; al arrancar carga cuatro dispositivos
+solo si la tabla está vacía. También existe un repositorio en memoria para pruebas.
 
 Los identificadores de dispositivos se comparan exactamente, sin normalización
 y distinguiendo mayúsculas de minúsculas: `led1` y `LED1` son dispositivos
@@ -124,7 +123,7 @@ por ahora Compose levanta únicamente PostgreSQL y Mailpit.
 ## Regla de integración del análisis
 
 El parser debe procesar los tokens disponibles incluso si el lexer informó
-errores, para presentar ambos tipos de diagnóstico. El futuro servicio de
+errores, para presentar ambos tipos de diagnóstico. El servicio de
 aplicación no debe pasar al análisis semántico ni ejecutar instrucciones si
 hay errores léxicos o sintácticos.
 

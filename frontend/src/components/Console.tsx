@@ -1,41 +1,45 @@
 import { useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
-import { validateCommand } from '../api'
-import type { ResultadoValidacion } from '../types'
+import { executeCommand } from '../api'
+import type { ResultadoEjecucion } from '../types'
 
 interface ConsoleProps {
   refrescarDispositivos: () => Promise<void>
 }
 
-export function Console(_props: ConsoleProps) {
+export function Console({ refrescarDispositivos }: ConsoleProps) {
   const [fuente, setFuente] = useState('')
-  const [resultado, setResultado] = useState<ResultadoValidacion | null>(null)
+  const [resultado, setResultado] = useState<ResultadoEjecucion | null>(null)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function validar() {
+  async function ejecutar() {
     if (cargando) return
     setCargando(true)
     setError(null)
     setResultado(null)
     try {
-      setResultado(await validateCommand(fuente))
+      setResultado(await executeCommand(fuente))
     } catch (causa) {
-      setError(causa instanceof Error ? causa.message : 'Error inesperado al validar')
+      setError(causa instanceof Error ? causa.message : 'Error inesperado al ejecutar')
     } finally {
-      setCargando(false)
+      try {
+        await refrescarDispositivos()
+      } finally {
+        setCargando(false)
+      }
     }
   }
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault()
-    void validar()
+    void ejecutar()
   }
 
   function atajo(evento: KeyboardEvent<HTMLTextAreaElement>) {
     if (evento.ctrlKey && evento.key === 'Enter') {
       evento.preventDefault()
-      void validar()
+      void ejecutar()
     }
   }
 
@@ -43,7 +47,7 @@ export function Console(_props: ConsoleProps) {
     <section className="panel" aria-labelledby="console-title">
       <p className="eyebrow">LENGUAJE DE COMANDOS</p>
       <h2 id="console-title">Consola</h2>
-      <p className="section-description">Escribe una instrucción por línea para validarla.</p>
+      <p className="section-description">Escribe una instrucción por línea para ejecutarla.</p>
       <form onSubmit={enviar}>
         <label htmlFor="source">Instrucciones</label>
         <textarea
@@ -61,18 +65,19 @@ export function Console(_props: ConsoleProps) {
         />
         <div className="form-actions">
           <button type="submit" disabled={cargando}>
-            {cargando ? 'Validando...' : 'Ejecutar'}
+            {cargando ? 'Ejecutando...' : 'Ejecutar'}
           </button>
           <span>Ctrl + Enter</span>
         </div>
       </form>
-      <p className="validation-note">En esta fase solo se validan comandos; los estados no cambian.</p>
-      {cargando && <p role="status">Validando instrucciones...</p>}
+      {cargando && <p role="status">Ejecutando instrucciones...</p>}
       {error && <p className="error-message" role="alert">{error}</p>}
       {resultado && (
         <div className="result" aria-live="polite">
-          <h3 className={resultado.valido ? 'success-text' : 'error-text'}>
-            {resultado.valido ? 'Instrucciones válidas' : 'Se encontraron errores'}
+          <h3 className={resultado.valido && resultado.exito ? 'success-text' : 'error-text'}>
+            {!resultado.valido
+              ? 'Se encontraron errores'
+              : resultado.exito ? 'Ejecución completada' : 'Se ejecutó con errores'}
           </h3>
           {resultado.errores.length > 0 && (
             <ul className="error-list">
@@ -85,11 +90,14 @@ export function Console(_props: ConsoleProps) {
               ))}
             </ul>
           )}
-          {resultado.instrucciones.length > 0 && (
-            <>
-              <h4>Instrucciones reconocidas</h4>
-              <pre>{JSON.stringify(resultado.instrucciones, null, 2)}</pre>
-            </>
+          {resultado.valido && resultado.eventos.length > 0 && (
+            <ol className="event-list">
+              {resultado.eventos.map((evento, indice) => (
+                <li key={indice} className={evento.tipo.startsWith('ERROR') ? 'error-text' : undefined}>
+                  {evento.texto}
+                </li>
+              ))}
+            </ol>
           )}
         </div>
       )}
