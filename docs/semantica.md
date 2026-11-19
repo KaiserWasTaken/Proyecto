@@ -15,6 +15,9 @@ distinguen mayúsculas y minúsculas.
 Los dispositivos iniciales son `led1` APAGADO, `led2` ENCENDIDO,
 `alarma1` ACTIVADA y `ventilador1` APAGADO.
 
+Desde la Semana 3, `REPETIR` acepta de 1 a 100 veces; en la Semana 2 solo
+se exigía que el número fuera mayor que cero.
+
 ## Acciones semánticas
 
 | Acción | Comprobación o resultado |
