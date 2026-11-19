@@ -1,63 +1,17 @@
 """Pruebas HTTP de ejecución y transacciones sin servicios externos."""
 
-from collections.abc import Iterator
-
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
-from sqlalchemy.pool import StaticPool
 
-import app.main as main
-from app.api.routes import obtener_correo, obtener_sesion
 from app.db.repositorios import PostgresRegistroNotificaciones, RepositorioEjecuciones
 from app.ir.instructions import InstruccionIR, OpIR
 from app.semantic.symbol_table import DispositivoRepository
 from app.services import command_service
 from app.vm.executor import ResultadoEjecucion
 from app.vm.ports import RegistroNotificaciones, ServicioCorreo
-from conftest import CorreoFalso
-
-
-@pytest.fixture
-def entorno(monkeypatch: pytest.MonkeyPatch) -> Iterator[tuple[TestClient, Engine, CorreoFalso]]:
-    """Proporciona una aplicación aislada con sesión y correo sustituibles."""
-    # TestClient usa otros hilos: StaticPool comparte la misma SQLite en memoria.
-    engine = create_engine(
-        "sqlite+pysqlite:///:memory:", poolclass=StaticPool,
-        connect_args={"check_same_thread": False},
-    )
-    correo = CorreoFalso()
-    monkeypatch.setattr(main, "crear_engine", lambda: engine)
-
-    def sesion_prueba() -> Iterator[Session]:
-        """Cede una sesión para cada petición HTTP."""
-        with Session(engine) as sesion:
-            yield sesion
-
-    main.app.dependency_overrides[obtener_sesion] = sesion_prueba
-    main.app.dependency_overrides[obtener_correo] = lambda: correo
-    try:
-        with TestClient(main.app) as cliente:
-            yield cliente, engine, correo
-    finally:
-        main.app.dependency_overrides.pop(obtener_sesion, None)
-        main.app.dependency_overrides.pop(obtener_correo, None)
-
-
-def estados(cliente: TestClient) -> dict[str, str]:
-    """Consulta los estados actuales desde el endpoint público."""
-    respuesta = cliente.get("/api/devices")
-    assert respuesta.status_code == 200
-    return {d["identificador"]: d["estado"] for d in respuesta.json()}
-
-
-def ejecutar(cliente: TestClient, fuente: str) -> dict[str, object]:
-    """Envía un programa y exige la respuesta HTTP normal."""
-    respuesta = cliente.post("/api/commands/execute", json={"source": fuente})
-    assert respuesta.status_code == 200
-    return respuesta.json()
+from conftest import CorreoFalso, ejecutar, estados
 
 
 def test_encender_persiste_y_devuelve_evento(entorno: tuple[TestClient, Engine, CorreoFalso]) -> None:

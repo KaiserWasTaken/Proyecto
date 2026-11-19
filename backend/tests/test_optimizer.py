@@ -7,8 +7,7 @@ import pytest
 from app.ir.generator import generar_ir
 from app.ir.instructions import InstruccionIR, OpIR
 from app.optimizer.optimizer import optimizar
-from app.vm.executor import Ejecutor
-from conftest import CorreoFalso, NotificacionesFalsas, compilar, repositorio_inicial
+from conftest import comprobar_equivalencia
 
 
 def control(dispositivo: str, operacion: str) -> dict[str, object]:
@@ -192,25 +191,6 @@ def test_destino_invalido_no_se_oculta(destino: int | str) -> None:
     ir = [InstruccionIR(OpIR.JUMP_IF_FALSE, (destino,)), InstruccionIR(OpIR.HALT)]
     with pytest.raises(ValueError, match="Destino de salto inválido"):
         optimizar(ir)
-
-
-def comprobar_equivalencia(fuente: str) -> None:
-    """Compara efectos visibles y estados al ejecutar una fuente con y sin optimización."""
-    repositorios = [repositorio_inicial(), repositorio_inicial()]
-    ir = compilar(fuente, repositorios[0])
-    variantes = [ir, optimizar(ir).ir_optimizado]
-    resultados = []
-    for repositorio, instrucciones in zip(repositorios, variantes, strict=True):
-        correo, notificaciones = CorreoFalso(), NotificacionesFalsas()
-        resultado = Ejecutor(repositorio, correo, notificaciones).ejecutar(instrucciones)
-        assert resultado.exito, f"Error al ejecutar:\n{fuente}\n{resultado.errores}"
-        resultados.append((
-            repositorio.listar(),
-            [evento for evento in resultado.eventos if evento.tipo != OpIR.SET_STATE.value],
-            correo.enviados,
-            notificaciones.mensajes,
-        ))
-    assert resultados[0] == resultados[1], f"Diferencia para el programa:\n{fuente}"
 
 
 @pytest.mark.parametrize(
