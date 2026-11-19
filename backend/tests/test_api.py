@@ -4,10 +4,24 @@ from collections.abc import Iterator
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 
+import app.main as main
 from app.api.routes import obtener_repositorio
 from app.main import app
 from app.semantic.symbol_table import DispositivoRepositoryMemoria, TablaSimbolos
+
+
+@pytest.fixture(autouse=True)
+def base_de_prueba(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Aísla el arranque de la aplicación de la base real."""
+    # TestClient usa otros hilos: una sola conexión comparte la SQLite en memoria.
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:", poolclass=StaticPool,
+        connect_args={"check_same_thread": False},
+    )
+    monkeypatch.setattr(main, "crear_engine", lambda: engine)
 
 
 @pytest.fixture

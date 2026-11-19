@@ -36,3 +36,21 @@ class ValidacionRespuesta(BaseModel):
     valido: bool
     errores: list[ErrorRespuesta]
     instrucciones: list[dict[str, object]]
+
+
+class EventoRespuesta(BaseModel):
+    """Evento de ejecución expuesto por la API."""
+
+    tipo: str
+    texto: str
+    dispositivo: str | None = None
+    estado: str | None = None
+
+
+class EjecucionRespuesta(BaseModel):
+    """Resultado de validación y ejecución de un programa."""
+
+    valido: bool
+    exito: bool
+    errores: list[ErrorRespuesta]
+    eventos: list[EventoRespuesta]

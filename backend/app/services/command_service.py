@@ -1,12 +1,27 @@
-"""Servicio de consulta de dispositivos y validación de comandos."""
+"""Servicio de consulta, validación y ejecución transaccional de comandos."""
 
-from typing import Literal, TypedDict
+import logging
+from typing import Literal, NotRequired, TypedDict
 
+from sqlalchemy.orm import Session
+
+from app.db.repositorios import (
+    PostgresDispositivoRepository,
+    PostgresRegistroNotificaciones,
+    RepositorioEjecuciones,
+)
+from app.ir.generator import generar_ir
 from app.lexer.errors import ErrorLexico
+from app.optimizer.optimizer import optimizar
 from app.parser.errors import ErrorSintactico
 from app.semantic.analyzer import Analizador, ErrorSemantico
 from app.semantic.symbol_table import DispositivoRepository
 from app.services.frontend_pipeline import analizar
+from app.vm.executor import Ejecutor, EventoEjecucion
+from app.vm.ports import ServicioCorreo
+
+
+_logger = logging.getLogger(__name__)
 
 
 class DatosDispositivo(TypedDict):
@@ -34,6 +49,24 @@ class ResultadoValidacion(TypedDict):
     valido: bool
     errores: list[DatosError]
     instrucciones: list[dict[str, object]]
+
+
+class DatosEvento(TypedDict):
+    """Evento de ejecución enviado a la API y al historial."""
+
+    tipo: str
+    texto: str
+    dispositivo: NotRequired[str]
+    estado: NotRequired[str]
+
+
+class ResultadoComando(TypedDict):
+    """Validación y resultado de ejecutar un programa completo."""
+
+    valido: bool
+    exito: bool
+    errores: list[DatosError]
+    eventos: list[DatosEvento]
 
 
 def listar_dispositivos(repositorio: DispositivoRepository) -> list[DatosDispositivo]:
@@ -77,3 +110,51 @@ def validar_comandos(fuente: str, repositorio: DispositivoRepository) -> Resulta
         "errores": [_datos_error("semantico", error) for error in errores_semanticos],
         "instrucciones": instrucciones,
     }
+
+
+def _datos_evento(evento: EventoEjecucion) -> DatosEvento:
+    """Adapta los datos públicos de un evento al contrato HTTP."""
+    datos: DatosEvento = {"tipo": evento.tipo, "texto": evento.texto}
+    if evento.dispositivo is not None:
+        datos["dispositivo"] = evento.dispositivo
+    if evento.estado is not None:
+        datos["estado"] = evento.estado
+    return datos
+
+
+def ejecutar_comandos(fuente: str, sesion: Session, correo: ServicioCorreo) -> ResultadoComando:
+    """Valida, ejecuta y guarda el resultado con una transacción por ejecución."""
+    repositorio = PostgresDispositivoRepository(sesion)
+    historial = RepositorioEjecuciones(sesion)
+    validacion = validar_comandos(fuente, repositorio)
+    if not validacion["valido"]:
+        historial.guardar(fuente, False, [])
+        sesion.commit()
+        return {"valido": False, "exito": False, "errores": validacion["errores"], "eventos": []}
+
+    try:
+        ir = optimizar(generar_ir(validacion["instrucciones"])).ir_optimizado
+        ejecutor = Ejecutor(repositorio, correo, PostgresRegistroNotificaciones(sesion))
+        ejecucion = ejecutor.ejecutar(ir)
+    except Exception:
+        _logger.exception("La ejecución del programa abortó por un error inesperado")
+        sesion.rollback()
+        eventos: list[DatosEvento] = [{
+            "tipo": "ERROR_EJECUCION",
+            "texto": "Error interno: se abortó la ejecución y se revirtieron los cambios de la base de datos",
+        }]
+        exito = False
+    else:
+        eventos = [_datos_evento(evento) for evento in ejecucion.eventos]
+        exito = ejecucion.exito
+        if any(evento.tipo == "ERROR_EJECUCION" for evento in ejecucion.eventos):
+            sesion.rollback()
+            exito = False
+            eventos.append({
+                "tipo": "ERROR_EJECUCION",
+                "texto": "Se abortó la ejecución y se revirtieron los cambios de la base de datos",
+            })
+
+    historial.guardar(fuente, exito, [dict(evento) for evento in eventos])
+    sesion.commit()
+    return {"valido": True, "exito": exito, "errores": [], "eventos": eventos}

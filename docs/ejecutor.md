@@ -8,8 +8,9 @@ registro de comparación independiente.
 
 El resultado contiene `exito`, errores y eventos ordenados. Los eventos de
 `SET_STATE` incluyen dispositivo y estado; las consultas y los listados también
-recogen los datos leídos. Los errores de IR o dispositivos abortan sin revertir
-las acciones anteriores. Un máximo de 10 000 instrucciones evita bucles.
+recogen los datos leídos. La VM por sí sola no revierte acciones anteriores
+al abortar; la capa de aplicación gestiona la transacción. Un máximo de
+10 000 instrucciones evita bucles.
 
 ## Puertos
 
@@ -21,6 +22,20 @@ implementaciones falsas en memoria. Si el correo falla, se registra el error,
 `exito` queda en `False` y se continúa: las instrucciones posteriores son
 independientes del envío fallido.
 
-`SmtpServicioCorreo` implementa el puerto mediante `SMTP_HOST`, `SMTP_PORT` y
-`SMTP_FROM`; utiliza Mailpit sin autenticación ni TLS y convierte los fallos de
-envío en `ErrorCorreo`. La API todavía no está conectada a este adaptador.
+## API y transacciones
+
+Al arrancar, la API inicializa las tablas y configura SMTP mediante
+`DATABASE_URL`, `SMTP_HOST`, `SMTP_PORT` y `SMTP_FROM`. Cada petición recibe
+una sesión de BD y el servicio de correo. `execute` valida el programa
+completo, genera y optimiza el IR y ejecuta la VM con los repositorios de la
+misma sesión. Los intentos se guardan en el historial.
+
+Los errores de lenguaje impiden toda ejecución. Un fallo de correo no aborta:
+el resultado indica `exito=False`, se ejecuta lo restante y se confirman las
+escrituras de dispositivos y notificaciones. Ante un error fatal o una
+excepción inesperada, el servicio revierte esas escrituras y guarda el
+resultado en una transacción nueva. Los eventos anteriores al aborto describen
+acciones intentadas; un evento posterior informa que los cambios se revirtieron.
+
+**Limitación:** un correo enviado antes de un aborto no se puede deshacer con
+el rollback de la base de datos.

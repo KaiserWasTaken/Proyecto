@@ -8,17 +8,22 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
-from app.semantic.symbol_table import DispositivoRepositoryMemoria, TablaSimbolos
+from app.db.engine import crear_engine, crear_fabrica_sesiones
+from app.db.init_db import init_db
+from app.services.correo_smtp import SmtpServicioCorreo
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Inicializa una instancia compartida del repositorio al arrancar."""
-    repositorio = DispositivoRepositoryMemoria()
-    for simbolo in TablaSimbolos().listar():
-        repositorio.registrar(simbolo)
-    app.state.repositorio = repositorio
-    yield
+    """Inicializa la base de datos y el servicio de correo al arrancar."""
+    engine = crear_engine()
+    try:
+        init_db(engine)
+        app.state.fabrica_sesiones = crear_fabrica_sesiones(engine)
+        app.state.servicio_correo = SmtpServicioCorreo()
+        yield
+    finally:
+        engine.dispose()
 
 
 app = FastAPI(lifespan=lifespan)

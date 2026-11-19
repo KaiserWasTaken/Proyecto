@@ -8,10 +8,9 @@ ni lenguaje natural.
 
 Están implementados el lexer, el parser, el AST, el analizador semántico, la
 tabla de símbolos en memoria, el IR, el optimizador y el ejecutor con puertos
-inyectables. La API y la interfaz siguen siendo solo de validación; aún no
-están conectadas al ejecutor ni a los repositorios de PostgreSQL. Compose
-incluye PostgreSQL y Mailpit como servicios de apoyo; la integración de SMTP,
-el CLI y el Compose completo están pendientes.
+inyectables. La API valida y ejecuta comandos con PostgreSQL y SMTP. La
+interfaz todavía solo valida; el CLI y el Compose completo están pendientes.
+Compose incluye PostgreSQL y Mailpit como servicios de apoyo.
 
 Consulta la [gramática y los tokens](docs/gramatica.md), los
 [nodos del AST y Visitor](docs/ast.md), la [semántica](docs/semantica.md),
@@ -78,6 +77,11 @@ Python 3.12 o posterior para crear el entorno virtual.
 Para iniciar la API desde el directorio `backend`:
 
 ```powershell
+# Desde la raíz, carga las variables del archivo local antes de iniciar la API.
+Get-Content .\.env | Where-Object { $_ -match '^\s*[A-Za-z_][A-Za-z0-9_]*=' } | ForEach-Object {
+    $nombre, $valor = $_ -split '=', 2
+    Set-Item -Path "Env:$nombre" -Value $valor
+}
 cd .\backend
 uvicorn app.main:app --reload
 ```
