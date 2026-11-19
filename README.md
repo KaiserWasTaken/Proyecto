@@ -9,8 +9,8 @@ ni lenguaje natural.
 Están implementados el lexer, el parser, el AST, el analizador semántico, la
 tabla de símbolos en memoria, el IR, el optimizador y el ejecutor con puertos
 inyectables. La API y la interfaz siguen siendo solo de validación; aún no
-están conectadas al ejecutor. El CLI, la base de datos, SMTP real y Docker
-Compose están pendientes.
+están conectadas al ejecutor. Compose incluye PostgreSQL y Mailpit como
+servicios de apoyo; su integración, el CLI y el Compose completo están pendientes.
 
 Consulta la [gramática y los tokens](docs/gramatica.md), los
 [nodos del AST y Visitor](docs/ast.md), la [semántica](docs/semantica.md),
@@ -38,13 +38,23 @@ CommandFlow/
 ├── frontend/
 │   └── src/             # Interfaz React y TypeScript
 ├── docs/                # Gramática y documentación del compilador
-├── docker-compose.yml   # Pendiente: frontend, backend, postgres y mailpit
+├── docker-compose.yml   # PostgreSQL y Mailpit
 ├── .gitignore
 └── README.md
 ```
 
 El procesamiento del lenguaje se mantendrá independiente de FastAPI y de la
 base de datos; la API y la persistencia serán adaptadores externos.
+
+## Servicios de apoyo
+
+Copia `.env.example` a `.env` y ajusta la contraseña de desarrollo. Después
+ejecuta `docker compose up -d`. PostgreSQL escucha en el puerto indicado por
+`POSTGRES_PORT` (5432 por defecto) y Mailpit en `localhost:1025`, con interfaz
+en `http://localhost:8025`. Si cambias el puerto o las credenciales de
+PostgreSQL, actualiza también `DATABASE_URL` en `.env`.
+Las credenciales de PostgreSQL se aplican al crear el volumen; si este ya
+contiene datos, cambiar `.env` no modifica la contraseña almacenada.
 
 ## Preparación del backend
 
@@ -103,8 +113,8 @@ y distinguiendo mayúsculas de minúsculas: `led1` y `LED1` son dispositivos
 distintos. Esta regla se aplica al registro, la búsqueda y la actualización,
 y debe mantenerse en cualquier implementación futura del repositorio.
 
-El comando `docker compose up --build` se habilitará cuando se implementen
-los servicios y sus archivos de configuración; todavía no está disponible.
+El despliegue completo con backend y frontend se incorporará más adelante;
+por ahora Compose levanta únicamente PostgreSQL y Mailpit.
 
 ## Regla de integración del análisis
 
