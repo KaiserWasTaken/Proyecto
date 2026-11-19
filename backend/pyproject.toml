@@ -25,4 +25,7 @@ include = ["app", "app.*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-markers = ["postgres: pruebas opcionales contra PostgreSQL configurado en DATABASE_URL"]
+markers = [
+    "postgres: pruebas opcionales contra PostgreSQL configurado en DATABASE_URL",
+    "mailpit: prueba opcional contra el servidor SMTP de Mailpit",
+]

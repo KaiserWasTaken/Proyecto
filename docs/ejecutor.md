@@ -20,3 +20,7 @@ El ejecutor no depende de SMTP ni de una base de datos. En pruebas se inyectan
 implementaciones falsas en memoria. Si el correo falla, se registra el error,
 `exito` queda en `False` y se continúa: las instrucciones posteriores son
 independientes del envío fallido.
+
+`SmtpServicioCorreo` implementa el puerto mediante `SMTP_HOST`, `SMTP_PORT` y
+`SMTP_FROM`; utiliza Mailpit sin autenticación ni TLS y convierte los fallos de
+envío en `ErrorCorreo`. La API todavía no está conectada a este adaptador.
