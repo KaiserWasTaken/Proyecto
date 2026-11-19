@@ -49,8 +49,8 @@ def verificar_correo(destinatario: str, mensaje: str) -> bool:
 
 
 def verificar_repeticion(veces: int) -> bool:
-    """Indica si el número de repeticiones es positivo."""
-    return veces > 0
+    """Indica si el número de repeticiones está entre 1 y 100."""
+    return 1 <= veces <= 100
 
 
 def construir_instruccion(instruccion: Instruccion) -> dict[str, object]:

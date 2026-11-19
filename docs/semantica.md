@@ -24,7 +24,7 @@ Los dispositivos iniciales son `led1` APAGADO, `led2` ENCENDIDO,
 | `verificar_estado` | Estado válido para el tipo del dispositivo. |
 | `verificar_mensaje` | Mensaje no vacío. |
 | `verificar_correo` | Formato del destinatario y mensaje no vacío. |
-| `verificar_repeticion` | Número de repeticiones mayor que cero. |
+| `verificar_repeticion` | Número de repeticiones entre 1 y 100. |
 | `construir_instruccion` | Diccionario de una instrucción previamente validada. |
 
 `construir_instruccion` produce estas estructuras; la acción anidada también
@@ -51,4 +51,4 @@ Cada error incluye código, mensaje, línea y columna del nodo.
 | `ESTADO_INCOMPATIBLE` | Estado comparado inválido para el tipo. |
 | `MENSAJE_VACIO` | Notificación sin contenido. |
 | `CORREO_INVALIDO` | Destinatario inválido o mensaje de correo vacío. |
-| `REPETICION_INVALIDA` | Número de repeticiones no positivo. |
+| `REPETICION_INVALIDA` | Número de repeticiones fuera del rango 1–100. |

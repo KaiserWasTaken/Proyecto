@@ -120,5 +120,5 @@ class Analizador(NodoVisitor[None]):
     def visit_repetir(self, nodo: Repetir) -> None:
         """Valida la cantidad y visita la acción de la repetición."""
         if not verificar_repeticion(nodo.veces):
-            self._error(nodo, "REPETICION_INVALIDA", "El número de repeticiones debe ser mayor que cero")
+            self._error(nodo, "REPETICION_INVALIDA", "El número de repeticiones debe estar entre 1 y 100")
         nodo.accion.accept(self)

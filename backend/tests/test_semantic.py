@@ -156,3 +156,19 @@ def test_error_semantico_formato_e_inmutabilidad() -> None:
     assert str(error) == "Error semántico (línea 2, col 3): Correo inválido"
     with pytest.raises(FrozenInstanceError):
         setattr(error, "linea", 9)
+
+
+@pytest.mark.parametrize(("veces", "valido"), [(1, True), (100, True), (101, False)])
+def test_limite_superior_de_repeticion(
+    repositorio: DispositivoRepositoryMemoria, veces: int, valido: bool
+) -> None:
+    """Se aceptan 1 y 100 repeticiones, pero se rechaza 101."""
+    instrucciones, errores = analizar_texto(f"REPETIR {veces} VECES ENCENDER led1", repositorio)
+    if valido:
+        assert len(instrucciones) == 1
+        assert errores == []
+    else:
+        assert instrucciones == []
+        assert len(errores) == 1
+        assert errores[0].codigo == "REPETICION_INVALIDA"
+        assert "1 y 100" in errores[0].mensaje
