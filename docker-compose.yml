@@ -1,6 +1,42 @@
 name: commandflow
 
 services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8001}
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?connect_timeout=5}
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_FROM: ${SMTP_FROM:-commandflow@localhost}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8001}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/api/devices', timeout=3).close()"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   postgres:
     image: postgres:16
     environment:
@@ -20,8 +56,8 @@ services:
   mailpit:
     image: axllent/mailpit
     ports:
-      - "127.0.0.1:1025:1025"
-      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_WEB_PORT:-8025}:8025"
 
 volumes:
   postgres_data:
