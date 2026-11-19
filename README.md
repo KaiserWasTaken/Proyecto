@@ -50,23 +50,33 @@ base de datos; la API y la persistencia serán adaptadores externos.
 Copia `.env.example` a `.env` y ajusta la contraseña de desarrollo. Después
 ejecuta `docker compose up --build`. Abre `http://localhost:5173`; la API está
 en `http://localhost:8001` y Mailpit en `http://localhost:8025`.
-PostgreSQL escucha en el puerto indicado por
-`POSTGRES_PORT` (5432 por defecto) y Mailpit en `localhost:1025`, con interfaz
-en `http://localhost:8025`. Si cambias el puerto o las credenciales de
-PostgreSQL, actualiza también `DATABASE_URL` y `DATABASE_URL_DOCKER` en
-`.env`. La segunda usa `postgres:5432`; Compose usa `mailpit:1025` para
-SMTP. Los valores locales de `DATABASE_URL` y `SMTP_HOST` se usan al ejecutar
-el backend fuera de Docker. Codifica para URL los caracteres especiales de las
-credenciales en ambas URL, manteniendo la contraseña original en
-`POSTGRES_PASSWORD`.
-`BACKEND_PORT`, `FRONTEND_PORT`, `MAILPIT_SMTP_PORT` y `MAILPIT_WEB_PORT`
-controlan los puertos publicados. Si cambias el puerto del backend, actualiza
-también `VITE_API_URL` y reconstruye el frontend; si cambias el puerto del
-frontend, actualiza `CORS_ORIGINS`.
-El enlace de Mailpit de la interfaz apunta a `localhost:8025`; si cambias
-`MAILPIT_WEB_PORT`, abre manualmente el puerto configurado.
+Dentro de Compose, el backend usa `postgres:5432` y `mailpit:1025`.
+`DATABASE_URL` y `SMTP_HOST` se usan al ejecutar el backend fuera de Docker.
+Si cambias las credenciales de PostgreSQL, actualiza `DATABASE_URL` y
+`DATABASE_URL_DOCKER` en `.env`; codifica para URL los caracteres especiales
+en ambas, manteniendo la contraseña original en `POSTGRES_PASSWORD`.
 Las credenciales de PostgreSQL se aplican al crear el volumen; si este ya
 contiene datos, cambiar `.env` no modifica la contraseña almacenada.
+
+### Si un puerto está ocupado
+
+Cambia la variable correspondiente en `.env`:
+
+| Servicio | Puerto del host | Variable |
+| --- | --- | --- |
+| Frontend | 5173 | `FRONTEND_PORT` |
+| API | 8001 | `BACKEND_PORT` |
+| PostgreSQL | 5433 | `POSTGRES_PORT` |
+| Mailpit web | 8025 | `MAILPIT_WEB_PORT` |
+| Mailpit SMTP | 1025 | `MAILPIT_SMTP_PORT` |
+
+Si cambias el puerto de la API, ajusta `VITE_API_URL` y reconstruye el frontend
+con `docker compose up --build`. Si cambias el puerto del frontend, ajusta
+`CORS_ORIGINS` al nuevo origen. Si cambias el puerto de PostgreSQL, actualiza
+el puerto de `DATABASE_URL` para el backend local; `DATABASE_URL_DOCKER` sigue
+usando `postgres:5432`. Si cambias el puerto SMTP, ajusta `SMTP_PORT` para
+el backend local. El enlace de Mailpit de la interfaz apunta a
+`localhost:8025`; si cambias `MAILPIT_WEB_PORT`, abre el nuevo puerto manualmente.
 
 ## Preparación del backend
 
