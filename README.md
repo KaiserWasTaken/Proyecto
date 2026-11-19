@@ -6,9 +6,10 @@ ni lenguaje natural.
 
 ## Estado
 
-Están implementados el lexer, el parser, el AST, su integración y la tabla de
-símbolos con un repositorio en memoria. El analizador semántico, el CLI, la
-API, la interfaz, la base de datos y Docker Compose aún están pendientes.
+Están implementados el lexer, el parser, el AST, el analizador semántico, la
+tabla de símbolos en memoria y la API de validación. El CLI, la interfaz, la
+base de datos y Docker Compose aún están pendientes. La API valida comandos,
+pero no los ejecuta.
 
 Consulta la [gramática y los tokens](docs/gramatica.md) y los
 [nodos del AST y Visitor](docs/ast.md).
@@ -56,6 +57,18 @@ python -m pytest -c .\backend\pyproject.toml
 
 Si el lanzador `py` no está disponible, utiliza la ruta al ejecutable de
 Python 3.12 o posterior para crear el entorno virtual.
+
+Para iniciar la API desde el directorio `backend`:
+
+```powershell
+cd .\backend
+uvicorn app.main:app --reload
+```
+
+El origen permitido por CORS se configura mediante la variable de entorno
+`FRONTEND_ORIGIN` (por defecto `http://localhost:5173`); consulta
+`backend/.env.example`. La variable debe establecerse en el entorno antes de
+arrancar el servidor.
 
 La tabla de símbolos usa un repositorio en memoria inicializado con cuatro
 dispositivos por defecto. Si se inyecta un repositorio, utiliza sus datos
