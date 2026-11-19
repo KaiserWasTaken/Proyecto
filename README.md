@@ -4,19 +4,13 @@ Proyecto universitario de Lenguajes y Autómatas II: una aplicación web que
 interpreta un lenguaje de comandos y opera dispositivos simulados, sin usar IA
 ni lenguaje natural.
 
-## Estado
+## Requisitos
 
-Están implementados el lexer, el parser, el AST, el analizador semántico, la
-tabla de símbolos en memoria, el IR, el optimizador y el ejecutor con puertos
-inyectables. La API y la interfaz ejecutan comandos con PostgreSQL y SMTP.
-Compose incluye frontend, backend, PostgreSQL y Mailpit.
+- Git.
+- Docker con Docker Compose.
+- Python 3.12 y Node.js solo para pruebas o desarrollo fuera de Docker.
 
-Consulta la [gramática y los tokens](docs/gramatica.md), los
-[nodos del AST y Visitor](docs/ast.md), la [semántica](docs/semantica.md),
-el [IR](docs/ir.md), la [optimización](docs/optimizacion.md) y el
-[ejecutor](docs/ejecutor.md), y el [modelo de base de datos](docs/base_de_datos.md).
-
-## Estructura prevista
+## Estructura
 
 ```text
 CommandFlow/
@@ -42,14 +36,27 @@ CommandFlow/
 └── README.md
 ```
 
-El procesamiento del lenguaje se mantendrá independiente de FastAPI y de la
-base de datos; la API y la persistencia serán adaptadores externos.
+El procesamiento del lenguaje es independiente de FastAPI y de la base de
+datos; la API y la persistencia actúan como adaptadores externos.
 
-## Docker Compose
+## Instalación con Docker Compose
 
-Copia `.env.example` a `.env` y ajusta la contraseña de desarrollo. Después
-ejecuta `docker compose up --build`. Abre `http://localhost:5173`; la API está
-en `http://localhost:8001` y Mailpit en `http://localhost:8025`.
+Desde PowerShell:
+
+```powershell
+git clone https://github.com/KaiserWasTaken/Proyecto.git
+cd Proyecto
+Copy-Item .env.example .env
+docker compose up --build
+```
+
+Si ajustas la contraseña de desarrollo, actualiza también las URL según se
+explica abajo. Direcciones por defecto:
+
+- Frontend: http://localhost:5173
+- API: http://localhost:8001; documentación interactiva: http://localhost:8001/docs
+- Mailpit: http://localhost:8025
+
 Dentro de Compose, el backend usa `postgres:5432` y `mailpit:1025`.
 `DATABASE_URL` y `SMTP_HOST` se usan al ejecutar el backend fuera de Docker.
 Si cambias las credenciales de PostgreSQL, actualiza `DATABASE_URL` y
@@ -78,7 +85,17 @@ usando `postgres:5432`. Si cambias el puerto SMTP, ajusta `SMTP_PORT` para
 el backend local. El enlace de Mailpit de la interfaz apunta a
 `localhost:8025`; si cambias `MAILPIT_WEB_PORT`, abre el nuevo puerto manualmente.
 
-## Preparación del backend
+### Reiniciar los datos
+
+`docker compose down` conserva el volumen de PostgreSQL. Para borrar
+**dispositivos, notificaciones e historial** y volver a los estados iniciales:
+
+```powershell
+docker compose down -v
+docker compose up --build
+```
+
+## Pruebas y desarrollo local
 
 Se requiere Python 3.12 o posterior (`requires-python = ">=3.12"`). Desde
 PowerShell, en la raíz del proyecto:
@@ -92,6 +109,8 @@ python -m pytest -c .\backend\pyproject.toml
 
 FastAPI y Starlette tienen versiones fijadas en `backend/pyproject.toml`;
 HTTPX también está fijado en las dependencias de desarrollo para las pruebas.
+Los marcadores de integración y escenarios cubiertos están en
+[pruebas](docs/pruebas.md).
 
 Si el lanzador `py` no está disponible, utiliza la ruta al ejecutable de
 Python 3.12 o posterior para crear el entorno virtual.
@@ -147,14 +166,15 @@ errores, para presentar ambos tipos de diagnóstico. El servicio de
 aplicación no debe pasar al análisis semántico ni ejecutar instrucciones si
 hay errores léxicos o sintácticos.
 
-## Flujo de Git sugerido
+## Documentación
 
-Inicializa Git si todavía no lo has hecho. Usa ramas por funcionalidad, por
-ejemplo `feature/lexer`, `feature/parser` y `feature/semantic`. Mensajes de
-commit sugeridos:
-
-- `chore: initialize project skeleton`
-- `docs: define command language grammar`
-- `feat: implement command lexer`
-- `feat: implement parser and AST`
-- `feat: add language inspection CLI`
+- [Arquitectura](docs/arquitectura.md)
+- [Gramática y tokens](docs/gramatica.md)
+- [AST](docs/ast.md)
+- [Análisis semántico y tabla de símbolos](docs/semantica.md)
+- [Representación intermedia](docs/ir.md)
+- [Optimización](docs/optimizacion.md)
+- [Ejecutor y transacciones](docs/ejecutor.md)
+- [Modelo de base de datos](docs/base_de_datos.md)
+- [Pruebas](docs/pruebas.md)
+- [Guion de demostración](docs/demo.md)

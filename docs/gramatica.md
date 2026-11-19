@@ -151,6 +151,6 @@ los tokens válidos; el error léxico sigue haciendo inválida la entrada comple
 La gramática no verifica que el dispositivo exista, que su operación o el
 estado comparado sean compatibles con su tipo, que el correo tenga un formato
 válido, que los mensajes no estén vacíos ni que la repetición esté entre 1 y
-100. Estas comprobaciones se delegan al futuro analizador semántico. Por
-ejemplo, `ENCENDER alarma1` y `ENCENDER dispositivo99` son sintácticamente
-válidos aunque deberán revisarse semánticamente.
+100. Estas comprobaciones las realiza el analizador semántico. Por ejemplo,
+`ENCENDER alarma1` y `ENCENDER dispositivo99` son sintácticamente válidos,
+pero producen errores semánticos.

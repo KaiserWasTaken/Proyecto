@@ -28,6 +28,8 @@ recientes primero.
 dispositivos iniciales solo cuando `dispositivos` está vacía. Repetirla no
 duplica dispositivos ni restablece estados. `DATABASE_URL` configura el motor;
 el driver de PostgreSQL es psycopg 3.
+Al arrancar, la aplicación reintenta hasta cinco veces los errores de conexión,
+con dos segundos entre intentos; si persisten, el arranque falla.
 
 ## Transacciones
 

@@ -34,8 +34,10 @@ Los errores de lenguaje impiden toda ejecución. Un fallo de correo no aborta:
 el resultado indica `exito=False`, se ejecuta lo restante y se confirman las
 escrituras de dispositivos y notificaciones. Ante un error fatal o una
 excepción inesperada, el servicio revierte esas escrituras y guarda el
-resultado en una transacción nueva. Los eventos anteriores al aborto describen
-acciones intentadas; un evento posterior informa que los cambios se revirtieron.
+resultado en una transacción nueva. En un error fatal detectado por la VM,
+los eventos anteriores describen acciones intentadas y un evento posterior
+informa que se revirtieron. Ante una excepción inesperada, la respuesta
+contiene un evento de error interno.
 
 **Limitación:** un correo enviado antes de un aborto no se puede deshacer con
 el rollback de la base de datos.
