@@ -9,13 +9,14 @@ ni lenguaje natural.
 Están implementados el lexer, el parser, el AST, el analizador semántico, la
 tabla de símbolos en memoria, el IR, el optimizador y el ejecutor con puertos
 inyectables. La API y la interfaz siguen siendo solo de validación; aún no
-están conectadas al ejecutor. Compose incluye PostgreSQL y Mailpit como
-servicios de apoyo; su integración, el CLI y el Compose completo están pendientes.
+están conectadas al ejecutor ni a los repositorios de PostgreSQL. Compose
+incluye PostgreSQL y Mailpit como servicios de apoyo; la integración de SMTP,
+el CLI y el Compose completo están pendientes.
 
 Consulta la [gramática y los tokens](docs/gramatica.md), los
 [nodos del AST y Visitor](docs/ast.md), la [semántica](docs/semantica.md),
 el [IR](docs/ir.md), la [optimización](docs/optimizacion.md) y el
-[ejecutor](docs/ejecutor.md).
+[ejecutor](docs/ejecutor.md), y el [modelo de base de datos](docs/base_de_datos.md).
 
 ## Estructura prevista
 

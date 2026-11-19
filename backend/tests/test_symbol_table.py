@@ -1,9 +1,14 @@
 """Pruebas de la tabla de símbolos y el repositorio en memoria."""
 
 from dataclasses import FrozenInstanceError
+from collections.abc import Iterator
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
+from app.db.models import Base
+from app.db.repositorios import PostgresDispositivoRepository
 from app.semantic.symbol_table import (
     DispositivoRepository,
     DispositivoRepositoryMemoria,
@@ -11,6 +16,27 @@ from app.semantic.symbol_table import (
     Simbolo,
     TablaSimbolos,
 )
+
+
+@pytest.fixture(params=["memoria", "sqlite"])
+def repositorio_contrato(request: pytest.FixtureRequest) -> Iterator[DispositivoRepository]:
+    """Ejecuta el mismo contrato con repositorios inicialmente vacíos."""
+    if request.param == "memoria":
+        yield DispositivoRepositoryMemoria()
+    else:
+        engine = create_engine("sqlite+pysqlite:///:memory:")
+        Base.metadata.create_all(engine)
+        with Session(engine) as sesion:
+            yield PostgresDispositivoRepository(sesion)
+        engine.dispose()
+
+
+@pytest.fixture
+def tabla_contrato(repositorio_contrato: DispositivoRepository) -> TablaSimbolos:
+    """Carga los dispositivos iniciales en el repositorio parametrizado."""
+    for simbolo in TablaSimbolos().listar():
+        repositorio_contrato.registrar(simbolo)
+    return TablaSimbolos(repositorio_contrato)
 
 
 def test_carga_inicial_y_catalogo() -> None:
@@ -31,9 +57,9 @@ def test_carga_inicial_y_catalogo() -> None:
     assert not tabla.estado_valido_para_tipo("ALARMA", "ENCENDIDO")
 
 
-def test_repositorio_inyectado_y_registro() -> None:
+def test_repositorio_inyectado_y_registro(repositorio_contrato: DispositivoRepository) -> None:
     """Una tabla usa los datos existentes del repositorio proporcionado."""
-    repositorio: DispositivoRepository = DispositivoRepositoryMemoria()
+    repositorio = repositorio_contrato
     tabla = TablaSimbolos(repositorio)
     assert tabla.listar() == []
     simbolo = Simbolo("led3", "LED", "APAGADO")
@@ -46,9 +72,9 @@ def test_repositorio_inyectado_y_registro() -> None:
     assert tabla.listar() == [simbolo]
 
 
-def test_actualizacion_valida_e_invalida() -> None:
+def test_actualizacion_valida_e_invalida(tabla_contrato: TablaSimbolos) -> None:
     """Una actualización inválida no altera el estado anterior."""
-    tabla = TablaSimbolos()
+    tabla = tabla_contrato
     anterior = tabla.obtener("led1")
     tabla.actualizar_estado("led1", "ENCENDIDO")
     actualizado = tabla.obtener("led1")
@@ -61,9 +87,27 @@ def test_actualizacion_valida_e_invalida() -> None:
     assert tabla.obtener("led1").estado == "ENCENDIDO"
 
 
-def test_identificadores_distinguen_mayusculas() -> None:
+def test_repositorio_valida_actualizacion_directa(
+    repositorio_contrato: DispositivoRepository,
+) -> None:
+    """Ambos repositorios validan estados y dispositivos sin pasar por la tabla."""
+    repositorio_contrato.registrar(Simbolo("alarma1", "ALARMA", "ACTIVADA"))
+    anterior = repositorio_contrato.obtener("alarma1")
+    with pytest.raises(ErrorTablaSimbolos) as error:
+        repositorio_contrato.actualizar_estado("alarma1", "ENCENDIDO")
+    assert error.value.codigo == "ESTADO_INCOMPATIBLE"
+    assert repositorio_contrato.obtener("alarma1") == anterior
+    with pytest.raises(ErrorTablaSimbolos) as error:
+        repositorio_contrato.actualizar_estado("inexistente", "APAGADO")
+    assert error.value.codigo == "DISPOSITIVO_NO_EXISTE"
+    repositorio_contrato.actualizar_estado("alarma1", "DESACTIVADA")
+    assert anterior == Simbolo("alarma1", "ALARMA", "ACTIVADA")
+    assert repositorio_contrato.obtener("alarma1") == Simbolo("alarma1", "ALARMA", "DESACTIVADA")
+
+
+def test_identificadores_distinguen_mayusculas(tabla_contrato: TablaSimbolos) -> None:
     """Registro, búsqueda y actualización usan identificadores exactos."""
-    tabla = TablaSimbolos()
+    tabla = tabla_contrato
     assert not tabla.existe("LED1")
     with pytest.raises(ErrorTablaSimbolos) as error:
         tabla.obtener("LED1")
@@ -79,9 +123,9 @@ def test_identificadores_distinguen_mayusculas() -> None:
     assert error.value.codigo == "DISPOSITIVO_DUPLICADO"
 
 
-def test_dispositivo_ausente() -> None:
+def test_dispositivo_ausente(tabla_contrato: TablaSimbolos) -> None:
     """Los accesos que requieren un dispositivo rechazan identificadores ausentes."""
-    tabla = TablaSimbolos()
+    tabla = tabla_contrato
     assert not tabla.existe("desconocido")
     for operacion in (
         lambda: tabla.obtener("desconocido"),
@@ -108,9 +152,9 @@ def test_simbolos_y_catalogo_no_admiten_datos_invalidos() -> None:
     assert error.value.codigo == "TIPO_NO_EXISTE"
 
 
-def test_lecturas_no_modifican_repositorio() -> None:
+def test_lecturas_no_modifican_repositorio(tabla_contrato: TablaSimbolos) -> None:
     """Las listas son independientes y los símbolos no se pueden mutar."""
-    tabla = TablaSimbolos()
+    tabla = tabla_contrato
     simbolo = tabla.obtener("led1")
     instantanea = tabla.listar()
     instantanea.clear()
